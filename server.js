@@ -35,14 +35,14 @@ app.post('/generate-story', async (req, res) => {
         const result = await model.generateContent(promptText);
         let generatedText = result.response.text();
         
-        // إذا قام الذكاء الاصطناعي بوضع علامات الـ Markdown حول کود JSON، نقوم بحذفها
-        if (generatedText.startsWith('```json')) {
-            generatedText = generatedText.replace(/```json/g, '').replace(/```/g, '').trim();
-        } else if (generatedText.startsWith('```')) {
-            generatedText = generatedText.replace(/```/g, '').trim();
+        // استخراج مصفوفة JSON بشكل آمن حتى لو أضاف الذكاء الاصطناعي نصوصاً إضافية
+        const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+            throw new Error("لم يتمكن الذكاء الاصطناعي من توليد استجابة بصيغة JSON صالحة.");
         }
+        const cleanJson = jsonMatch[0];
         
-        const pagesArray = JSON.parse(generatedText);
+        const pagesArray = JSON.parse(cleanJson);
 
         // لا نستدعي أي صور هنا، فقط نرسل مصفوفة الصفحات النصية
 
@@ -50,7 +50,7 @@ app.post('/generate-story', async (req, res) => {
 
     } catch (error) {
         console.error("Server Error:", error);
-        res.status(500).json({ error: 'An unexpected server error occurred.' });
+        res.status(500).json({ error: 'An unexpected server error occurred: ' + (error.message || 'Unknown error') });
     }
 });
 

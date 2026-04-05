@@ -27,13 +27,36 @@ app.post('/generate-story', async (req, res) => {
             return res.status(500).json({ error: 'API Key is not configured correctly on the server.' });
         }
 
-        // Initialize Gemini API
+        // قائمة شاملة لأفضل النماذج، سيقوم الخادم بتجربتها واحدة تلو الأخرى حتى ينجح
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const modelsToTry = [
+            "gemini-2.5-flash", 
+            "gemini-2.0-flash", 
+            "gemini-1.5-flash", 
+            "gemini-1.5-flash-latest", 
+            "gemini-pro"
+        ];
 
-        // الاتصال بخدمة الذكاء الاصطناعي لتوليد القصة
-        const result = await model.generateContent(promptText);
-        let generatedText = result.response.text();
+        let generatedText = null;
+        let lastError = null;
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`Trying model: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(promptText);
+                generatedText = result.response.text();
+                console.log(`✅ Success with model: ${modelName}`);
+                break; // نجحنا! نخرج من حلقة التجربة
+            } catch (err) {
+                console.warn(`❌ Model ${modelName} failed:`, err.message);
+                lastError = err;
+            }
+        }
+
+        if (!generatedText) {
+            throw new Error(`فشلت جميع نماذج Gemini المتاحة. آخر خطأ: ${lastError.message}`);
+        }
         
         // استخراج مصفوفة JSON بشكل آمن حتى لو أضاف الذكاء الاصطناعي نصوصاً إضافية
         const jsonMatch = generatedText.match(/\[[\s\S]*\]/);

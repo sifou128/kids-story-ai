@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { OpenAI } = require('openai'); // استيراد مكتبة OpenAI
+
 dotenv.config();
 
 const app = express();
@@ -24,8 +24,7 @@ app.post('/generate-story', async (req, res) => {
         const promptText = `You are a children's book author. Write a story based on: Name: ${childName}, Age: ${childAge}, Loves: ${interests}, Lesson: ${lesson}. Return ONLY a valid JSON array of 5 objects. Each object must have only one key: "text" (the story paragraph). IMPORTANT: The language of the story MUST perfectly match the language the user used for their inputs. If they typed in Arabic, write it in Arabic. If English, write in English. Do NOT include markdown tags like \`\`\`json, just output the raw array.`;
 
         const API_KEY = process.env.AI_API_KEY;
-        // مفتاح OpenAI الخاص بك يجب أن يُوضع في إعدادات المنصة المرفوعة لتفادي الحظر من GitHub
-        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
 
         if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
             return res.status(500).json({ error: 'API Key is not configured correctly on the server.' });
@@ -59,22 +58,7 @@ app.post('/generate-story', async (req, res) => {
         }
 
         if (!generatedText) {
-            console.warn(`فشلت جميع نماذج Gemini. جاري الانتقال فوراً إلى OpenAI...`);
-            try {
-                const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-                const completion = await openai.chat.completions.create({
-                    messages: [
-                        { role: "system", content: "You are a very helpful assistant." },
-                        { role: "user", content: promptText }
-                    ],
-                    model: "gpt-4o-mini", // أفضل وأسرع إصدار حالي من أوبن إيه آي
-                });
-                generatedText = completion.choices[0].message.content;
-                console.log(`✅ Success with OpenAI: gpt-4o-mini`);
-            } catch (openAiErr) {
-                console.error("OpenAI Error:", openAiErr);
-                throw new Error(`فشلت كل من Gemini و OpenAI! خطأ Gemini: ${lastError ? lastError.message : 'N/A'}. خطأ OpenAI: ${openAiErr.message}`);
-            }
+            throw new Error(`فشلت جميع نماذج Gemini المتاحة. آخر خطأ: ${lastError ? lastError.message : 'غير محدد'}`);
         }
         
         // استخراج مصفوفة JSON بشكل آمن حتى لو أضاف الذكاء الاصطناعي نصوصاً إضافية

@@ -29,7 +29,10 @@ app.post('/generate-story', async (req, res) => {
 
         // Initialize Gemini API
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel(
+            { model: "gemini-1.5-flash" },
+            { apiVersion: 'v1' }
+        );
 
         // الاتصال بخدمة الذكاء الاصطناعي لتوليد القصة
         const result = await model.generateContent(promptText);

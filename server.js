@@ -6,11 +6,11 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 dotenv.config();
 
 const app = express();
+app.use(express.static('public'));
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/generate-story', async (req, res) => {
     try {
